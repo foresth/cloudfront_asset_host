@@ -22,7 +22,7 @@ module CloudfrontAssetHost
           upload_keys_with_paths(gzip_keys_with_paths, dryrun, verbose, true)
         end
         
-        delete_old_keys
+        delete_old_keys(dryrun, verbose)
 
         @existing_keys = nil
       end
@@ -84,12 +84,12 @@ module CloudfrontAssetHost
         end
       end
       
-      def delete_old_keys
+      def delete_old_keys(dryrun, verbose)
         puts "-- Removing expired files" if verbose
         (existing_keys - new_keys).uniq.each do |key|
           unless new_keys.include?(key)
             puts "- #{key}" if verbose
-            bucket.delete_folder(key)
+            bucket.delete_folder(key) unless dryrun
           end
         end
       end
