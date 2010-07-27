@@ -63,15 +63,6 @@ module CloudfrontAssetHost
           result
         end
       end
-      
-      def css_keys_with_paths
-        current_paths.inject({}) do |result, path|
-          key = CloudfrontAssetHost.key_for_path(path) + path.gsub(Rails.public_path, '')
-
-          result[key] = path if File.extname(path) == '.css'
-          result
-        end
-      end
 
       def gzip_keys_with_paths
         current_paths.inject({}) do |result, path|
