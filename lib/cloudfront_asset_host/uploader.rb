@@ -3,12 +3,16 @@ require 'tempfile'
 
 module CloudfrontAssetHost
   module Uploader
+    
+    mattr_accessor :new_keys
 
     class << self
 
       def upload!(options = {})
         dryrun = options.delete(:dryrun) || false
         verbose = options.delete(:verbose) || false
+
+        self.new_keys = []
 
         puts "-- Updating uncompressed files" if verbose
         upload_keys_with_paths(keys_with_paths, dryrun, verbose, false)
@@ -17,12 +21,15 @@ module CloudfrontAssetHost
           puts "-- Updating compressed files" if verbose
           upload_keys_with_paths(gzip_keys_with_paths, dryrun, verbose, true)
         end
+        
+        delete_old_keys
 
         @existing_keys = nil
       end
 
       def upload_keys_with_paths(keys_paths, dryrun, verbose, gzip)
         keys_paths.each do |key, path|
+          new_keys << key
           if !existing_keys.include?(key) || CloudfrontAssetHost.css?(path) && rewrite_all_css?
             puts "+ #{key}" if verbose
 
@@ -74,6 +81,16 @@ module CloudfrontAssetHost
           end
 
           result
+        end
+      end
+      
+      def delete_old_keys
+        puts "-- Removing expired files" if verbose
+        (existing_keys - new_keys).uniq.each do |key|
+          unless new_keys.include?(key)
+            puts "- #{key}" if verbose
+            bucket.delete_folder(key)
+          end
         end
       end
       

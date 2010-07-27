@@ -4,12 +4,12 @@
 # -*- encoding: utf-8 -*-
 
 Gem::Specification.new do |s|
-  s.name = %q{cloudfront_asset_host}
-  s.version = "1.0.2"
+  s.name = %q{foresth-cloudfront_asset_host}
+  s.version = "1.0.3"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Menno van der Sman"]
-  s.date = %q{2010-03-23}
+  s.date = %q{2010-07-27}
   s.description = %q{Easy deployment of your assets on CloudFront or S3 using a simple rake-task. When enabled in production, the application's asset_host and public_paths will point to the correct location.}
   s.email = %q{menno@wakoopa.com}
   s.extra_rdoc_files = [
@@ -36,7 +36,7 @@ Gem::Specification.new do |s|
      "test/test_helper.rb",
      "test/uploader_test.rb"
   ]
-  s.homepage = %q{http://github.com/menno/cloudfront_asset_host}
+  s.homepage = %q{http://github.com/foresth/cloudfront_asset_host}
   s.rdoc_options = ["--charset=UTF-8"]
   s.require_paths = ["lib"]
   s.rubygems_version = %q{1.3.6}
