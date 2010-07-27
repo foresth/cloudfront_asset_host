@@ -23,9 +23,7 @@ module CloudfrontAssetHost
 
       def upload_keys_with_paths(keys_paths, dryrun, verbose, gzip)
         keys_paths.each do |key, path|
-          if existing_keys.include?(key)
-            puts "= #{key}" if verbose
-          else
+          if !existing_keys.include?(key) || CloudfrontAssetHost.css?(path) && rewrite_all_css?
             puts "+ #{key}" if verbose
 
             extension = File.extname(path)[1..-1]
@@ -36,6 +34,8 @@ module CloudfrontAssetHost
             bucket.put(key, File.read(data_path), {}, 'public-read', headers_for_path(extension, gzip)) unless dryrun
 
             File.unlink(data_path) if gzip && File.exists?(data_path)
+          else
+            puts "= #{key}" if verbose
           end
         end
       end
@@ -47,7 +47,7 @@ module CloudfrontAssetHost
       end
 
       def rewritten_css_path(path)
-        if File.extname(path) == '.css'
+        if CloudfrontAssetHost.css?(path)
           tmp = CloudfrontAssetHost::CssRewriter.rewrite_stylesheet(path)
           tmp.path
         else
@@ -63,6 +63,15 @@ module CloudfrontAssetHost
           result
         end
       end
+      
+      def css_keys_with_paths
+        current_paths.inject({}) do |result, path|
+          key = CloudfrontAssetHost.key_for_path(path) + path.gsub(Rails.public_path, '')
+
+          result[key] = path if File.extname(path) == '.css'
+          result
+        end
+      end
 
       def gzip_keys_with_paths
         current_paths.inject({}) do |result, path|
@@ -75,6 +84,10 @@ module CloudfrontAssetHost
 
           result
         end
+      end
+      
+      def rewrite_all_css?
+        @rewrite_all_css ||= !keys_with_paths.delete_if { |key, path| existing_keys.include?(key) || !CloudfrontAssetHost.image?(path) }.empty?
       end
 
       def existing_keys
@@ -107,7 +120,11 @@ module CloudfrontAssetHost
       end
 
       def bucket
-        @bucket ||= s3.bucket(CloudfrontAssetHost.bucket)
+        @bucket ||= begin 
+          bucket = s3.bucket(CloudfrontAssetHost.bucket)
+          bucket.disable_logging unless CloudfrontAssetHost.s3_logging
+          bucket
+        end
       end
 
       def s3

@@ -1,4 +1,5 @@
 require 'cloudfront_asset_host/asset_tag_helper_ext'
+require 'digest/md5'
 
 module CloudfrontAssetHost
 
@@ -16,6 +17,9 @@ module CloudfrontAssetHost
 
   # Path to S3 config. Expects an +access_key_id+ and +secret_access_key+
   mattr_accessor :s3_config
+  
+  # Log S3 server access on a bucket
+  mattr_accessor :s3_logging
 
   # Indicates whether the plugin should be enabled
   mattr_accessor :enabled
@@ -28,6 +32,9 @@ module CloudfrontAssetHost
 
   # Key-prefix under which to store gzipped assets
   mattr_accessor :gzip_prefix
+  
+  # Which extensions are likely to occur in css files
+  mattr_accessor :image_extensions
 
   class << self
 
@@ -37,11 +44,14 @@ module CloudfrontAssetHost
       self.cname      = nil
       self.key_prefix = ""
       self.s3_config  = "#{RAILS_ROOT}/config/s3.yml"
+      self.s3_logging = false
       self.enabled    = false
 
       self.gzip            = true
       self.gzip_extensions = %w(js css)
       self.gzip_prefix     = "gz"
+      
+      self.image_extensions = %w(jpg jpeg gif png)
 
       yield(self)
 
@@ -51,7 +61,15 @@ module CloudfrontAssetHost
     end
 
     def asset_host(source = nil, request = nil)
-      host = cname.present? ? "http://#{self.cname}" : "http://#{self.bucket_host}"
+      if cname.present?
+        if cname.is_a?(Proc) 
+          host = cname.call(source, request)
+        else
+          host = (cname =~ /%d/) ? cname % (source.hash % 4) : cname
+        end
+      else
+        host = "http://#{self.bucket_host}"
+      end
 
       if source && request && CloudfrontAssetHost.gzip
         gzip_allowed  = CloudfrontAssetHost.gzip_allowed_for_source?(source)
@@ -90,6 +108,15 @@ module CloudfrontAssetHost
       extension = source.split('.').last
       CloudfrontAssetHost.gzip_extensions.include?(extension)
     end
+    
+    def image?(path)
+      extension = path.split('.').last
+      CloudfrontAssetHost.image_extensions.include?(extension)
+    end
+    
+    def css?(path)
+      File.extname(path) == '.css'
+    end
 
   private
 
@@ -100,7 +127,8 @@ module CloudfrontAssetHost
     end
 
     def md5sum(path)
-      `openssl md5 #{path}`.split(/\s/)[1].to_s
+      #`openssl md5 #{path}`.split(/\s/)[1].to_s
+      Digest::MD5.hexdigest(File.read(path))
     end
 
   end
