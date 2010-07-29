@@ -25,11 +25,11 @@ end
 begin
   require 'jeweler'
   Jeweler::Tasks.new do |gemspec|
-    gemspec.name = "cloudfront_asset_host"
+    gemspec.name = "foresth-cloudfront_asset_host"
     gemspec.summary = "Rails plugin to easily and efficiently deploy your assets on Amazon's S3 or CloudFront"
     gemspec.description = "Easy deployment of your assets on CloudFront or S3 using a simple rake-task. When enabled in production, the application's asset_host and public_paths will point to the correct location."
     gemspec.email = "menno@wakoopa.com"
-    gemspec.homepage = "http://github.com/menno/cloudfront_asset_host"
+    gemspec.homepage = "http://github.com/foresth/cloudfront_asset_host"
     gemspec.authors = ["Menno van der Sman"]
     gemspec.add_dependency 'right_aws'
   end

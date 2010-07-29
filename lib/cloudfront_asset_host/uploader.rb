@@ -64,7 +64,8 @@ module CloudfrontAssetHost
 
       def keys_with_paths
         current_paths.inject({}) do |result, path|
-          key = CloudfrontAssetHost.key_for_path(path) + path.gsub(Rails.public_path, '')
+          key = CloudfrontAssetHost.plain_prefix.present? ? "#{CloudfrontAssetHost.plain_prefix}/" : ""
+          key << CloudfrontAssetHost.key_for_path(path) + path.gsub(Rails.public_path, '')
 
           result[key] = path
           result
@@ -140,7 +141,10 @@ module CloudfrontAssetHost
       end
 
       def config
-        @config ||= YAML::load_file(CloudfrontAssetHost.s3_config)
+        @config ||= begin 
+          config = YAML::load_file(CloudfrontAssetHost.s3_config)
+          config.has_key?(Rails.env) ? config[Rails.env] : config
+        end
       end
 
     end
