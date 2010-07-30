@@ -110,7 +110,9 @@ module CloudfrontAssetHost
       def existing_keys
         @existing_keys ||= begin
           keys = []
-          keys.concat bucket.keys('prefix' => CloudfrontAssetHost.key_prefix).map  { |key| key.name }
+          prefix = CloudfrontAssetHost.key_prefix
+          prefix = "#{CloudfrontAssetHost.plain_prefix}/#{prefix}" if CloudfrontAssetHost.plain_prefix.present?
+          keys.concat bucket.keys('prefix' => prefix).map  { |key| key.name }
           keys.concat bucket.keys('prefix' => CloudfrontAssetHost.gzip_prefix).map { |key| key.name }
           keys
         end
