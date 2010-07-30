@@ -65,7 +65,7 @@ Create an initializer to configure the plugin _config/initializers/cloudfront_as
       config.enabled = true if Rails.env.production? # only enable in production
     end
     
-The _cname_ config options also accepts Proc or string with the "%d" parameter (e.g. "http://assets%d.example.com" for multiple hosts).
+The _cname_ config option also accepts Proc or string with the "%d" parameter (e.g. "http://assets%d.example.com" for multiple hosts).
 
 ## Usage
 

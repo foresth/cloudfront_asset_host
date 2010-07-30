@@ -11,27 +11,31 @@ module CloudfrontAssetHost
       def upload!(options = {})
         dryrun = options.delete(:dryrun) || false
         verbose = options.delete(:verbose) || false
+        silent = options.delete(:silent) || false
+        verbose = false if silent
 
         self.new_keys = []
 
-        puts "-- Updating uncompressed files" if verbose
-        upload_keys_with_paths(keys_with_paths, dryrun, verbose, false)
+        puts "-- Updating uncompressed files" unless silent
+        upload_keys_with_paths(keys_with_paths, dryrun, verbose, silent, false)
 
         if CloudfrontAssetHost.gzip
-          puts "-- Updating compressed files" if verbose
-          upload_keys_with_paths(gzip_keys_with_paths, dryrun, verbose, true)
+          puts "-- Updating compressed files" unless silent
+          upload_keys_with_paths(gzip_keys_with_paths, dryrun, verbose, silent, true)
         end
         
-        delete_old_keys(dryrun, verbose)
+        delete_old_keys(dryrun, verbose, silent)
 
         @existing_keys = nil
       end
 
-      def upload_keys_with_paths(keys_paths, dryrun, verbose, gzip)
+      def upload_keys_with_paths(keys_paths, dryrun, verbose, silent, gzip)
+        counter = 0
         keys_paths.each do |key, path|
           new_keys << key
           if !existing_keys.include?(key) || CloudfrontAssetHost.css?(path) && rewrite_all_css?
             puts "+ #{key}" if verbose
+            counter += 1
 
             extension = File.extname(path)[1..-1]
 
@@ -45,6 +49,20 @@ module CloudfrontAssetHost
             puts "= #{key}" if verbose
           end
         end
+        puts "#{counter} key(s) updated" unless silent || verbose
+      end
+      
+      def delete_old_keys(dryrun, verbose, silent)
+        puts "-- Removing old files" unless silent
+        counter = 0
+        (existing_keys - new_keys).uniq.each do |key|
+          unless new_keys.include?(key)
+            puts "- #{key}" if verbose
+            counter += 1
+            bucket.delete_folder(key) unless dryrun
+          end
+        end
+        puts "#{counter} key(s) removed" unless silent || verbose
       end
 
       def gzipped_path(path)
@@ -82,16 +100,6 @@ module CloudfrontAssetHost
           end
 
           result
-        end
-      end
-      
-      def delete_old_keys(dryrun, verbose)
-        puts "-- Removing expired files" if verbose
-        (existing_keys - new_keys).uniq.each do |key|
-          unless new_keys.include?(key)
-            puts "- #{key}" if verbose
-            bucket.delete_folder(key) unless dryrun
-          end
         end
       end
       

@@ -58,7 +58,7 @@ module CloudfrontAssetHost
 
       yield(self)
 
-      if properly_configured?
+      if properly_configured? && enabled
         enable!
       end
     end
@@ -100,11 +100,15 @@ module CloudfrontAssetHost
     end
 
     def enable!
-      if enabled
-        ActionController::Base.asset_host = Proc.new { |source, request| CloudfrontAssetHost.asset_host(source, request) }
-        ActionView::Helpers::AssetTagHelper.send(:alias_method_chain, :rewrite_asset_path, :cloudfront)
-        ActionView::Helpers::AssetTagHelper.send(:alias_method_chain, :rails_asset_id, :cloudfront)
-      end
+      ActionController::Base.asset_host = Proc.new { |source, request| CloudfrontAssetHost.asset_host(source, request) }
+      ActionView::Helpers::AssetTagHelper.send(:alias_method_chain, :rewrite_asset_path, :cloudfront)
+      ActionView::Helpers::AssetTagHelper.send(:alias_method_chain, :rails_asset_id, :cloudfront)
+    end
+    
+    def disable!
+      ActionController::Base.asset_host = nil
+      ActionView::Helpers::AssetTagHelper.send(:alias_method, :rewrite_asset_path, :rewrite_asset_path_without_cloudfront)
+      ActionView::Helpers::AssetTagHelper.send(:alias_method, :rails_asset_id, :rails_asset_id_without_cloudfront)
     end
 
     def key_for_path(path)
