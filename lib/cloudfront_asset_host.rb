@@ -68,7 +68,7 @@ module CloudfrontAssetHost
         if cname.is_a?(Proc) 
           host = cname.call(source, request)
         else
-          host = (cname =~ /%d/) ? cname % (source.hash % 4) : cname
+          host = (cname =~ /%d/) ? cname % (source.hash % 4) : "#{cname}"
         end
       else
         host = "http://#{self.bucket_host}"
